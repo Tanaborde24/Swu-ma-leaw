@@ -3,12 +3,12 @@
   "name": "Helper Asthma: Air Quality & Care",
   "icons": [
     {
-      "src": "TEST PM25.png",
+      "src": "icon-192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "TEST PM25.png",
+      "src": "icon.png",
       "type": "image/png",
       "sizes": "512x512"
     }
