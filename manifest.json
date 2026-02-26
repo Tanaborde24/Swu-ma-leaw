@@ -1,11 +1,12 @@
 {
   "short_name": "HelperAsthma",
-  "name": "Helper Asthma: Air Quality & Care",
+  "name": "Helper Asthma Care",
   "icons": [
     {
       "src": "icon.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "icon.png",
@@ -13,9 +14,8 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": "/index.html",
-  "background_color": "#3b82f6",
+  "start_url": "index.html",
   "display": "standalone",
-  "scope": "/",
-  "theme_color": "#3b82f6"
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff"
 }
