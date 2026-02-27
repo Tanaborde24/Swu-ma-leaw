@@ -183,7 +183,7 @@
             <span class="text-[10px] font-bold">หน้าหลัก</span>
         </a>
         <a href="assessment.html" class="flex flex-col items-center text-blue-600">
-            <i class="fa-solid fa-clipboard-user text-xl mb-1"></i>
+            <i class="fa-solid fa-list-ul text-xl mb-1"></i>
             <span class="text-[10px] font-bold">ประเมิน</span>
         </a>
         <a href="location.html" class="flex flex-col items-center text-gray-400 hover:text-orange-500 transition">
@@ -199,8 +199,6 @@
             let symptomScore = 0;
             let answeredCount = 0;
 
-            // คำนวณคะแนนเฉพาะข้อ 1-7 (อาการและสิ่งกระตุ้น)
-            // เพราะส่วนประวัติสุขภาพ (8-10) ไม่นำมาคิดเป็นคะแนนความรุนแรงรายเดือน
             for (let i = 1; i <= 7; i++) {
                 const val = formData.get('q' + i);
                 if (val !== null) {
@@ -209,7 +207,6 @@
                 }
             }
 
-            // ตรวจสอบว่าตอบครบ 7 ข้อแรกหรือไม่
             if (answeredCount < 7) {
                 alert("กรุณาตอบคำถามในส่วนที่ 1-3 ให้ครบถ้วนเพื่อผลลัพธ์ที่แม่นยำ");
                 return;
@@ -222,7 +219,6 @@
 
             modal.classList.remove('hidden');
 
-            // เกณฑ์การประเมิน (คะแนนเต็ม 21 คะแนนจาก 7 ข้อ)
             if (symptomScore <= 4) {
                 icon.innerText = "✅"; 
                 title.innerText = "ควบคุมได้ดีเยี่ยม"; 
