@@ -12,12 +12,19 @@
         .form-radio { width: 1.2rem; height: 1.2rem; color: #1d4ed8; }
         .question-card { transition: all 0.3s ease; border-left: 4px solid transparent; }
         .question-card:hover { border-left-color: #3b82f6; background-color: #f1f5f9; }
+        
+        @keyframes bounce-in {
+            0% { transform: scale(0.9); opacity: 0; }
+            70% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-bounce-in { animation: bounce-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     </style>
 </head>
 <body class="pb-28">
 
     <header class="bg-white text-blue-800 p-4 text-center sticky top-0 z-40 shadow-sm flex items-center justify-between px-4">
-        <a href="index.html" class="text-gray-400 text-lg"><i class="fa-solid fa-chevron-left"></i></a>
+        <a href="index.html" class="text-gray-400 text-lg active:scale-90 transition-transform"><i class="fa-solid fa-chevron-left"></i></a>
         <h1 class="text-lg font-bold">แบบประเมินอาการหอบหืด</h1>
         <div class="w-4"></div>
     </header>
@@ -25,7 +32,7 @@
     <main class="p-4 max-w-md mx-auto">
         <div class="bg-blue-50 p-4 rounded-xl mb-6 border border-blue-100">
             <p class="text-xs text-blue-800 leading-relaxed">
-                <i class="fa-solid fa-circle-info mr-1"></i> 
+                <i class="fa-solid fa-circle-info mr-1"></i>
                 โปรดตอบคำถามตามความเป็นจริงในช่วง <b>4 สัปดาห์ที่ผ่านมา</b> เพื่อประเมินระดับการควบคุมโรคของคุณ
             </p>
         </div>
@@ -130,9 +137,9 @@
                     <div class="space-y-2 text-sm text-gray-600">
                         <label class="flex items-center gap-2"><input type="radio" name="q8" value="0" class="form-radio text-emerald-600"> ไม่เคย</label>
                         <div class="flex items-center gap-2">
-                            <input type="radio" name="q8" value="1" class="form-radio text-emerald-600"> 
+                            <input type="radio" name="q8" value="1" class="form-radio text-emerald-600">
                             <span>เคย (ระบุอายุ)</span>
-                            <input type="number" class="w-16 border-b border-emerald-300 bg-transparent text-center focus:outline-none" placeholder="...ปี">
+                            <input type="number" id="asthma_age" class="w-16 border-b border-emerald-300 bg-transparent text-center focus:outline-none" placeholder="...ปี">
                         </div>
                     </div>
                 </div>
@@ -170,7 +177,7 @@
                 <p id="result-desc" class="text-gray-600 mb-6 text-sm leading-relaxed px-2"></p>
                 
                 <div class="flex gap-3">
-                    <a href="index.html" class="flex-1 bg-gray-100 py-3 rounded-xl font-bold text-gray-600 text-sm hover:bg-gray-200 transition">หน้าหลัก</a>
+                    <a href="history.html" class="flex-1 bg-blue-50 py-3 rounded-xl font-bold text-blue-600 text-sm hover:bg-blue-100 transition">ดูประวัติ</a>
                     <a href="location.html" class="flex-1 bg-blue-600 py-3 rounded-xl font-bold text-white text-sm hover:bg-blue-700 transition shadow-lg shadow-blue-200">ค้นหาร้านยา</a>
                 </div>
             </div>
@@ -199,11 +206,22 @@
             let symptomScore = 0;
             let answeredCount = 0;
 
+            // คำถามที่เราต้องการเก็บรายละเอียด (1-7)
+            const questions = [
+                "หายใจเสียงวี้ด", "แน่นหน้าอก", "หายใจลำบาก",
+                "ตื่นกลางคืน", "ไอตอนกลางคืน", "เจอฝุ่น/ควัน", "อากาศเย็น/ฝน"
+            ];
+            const answersDetails = [];
+
             for (let i = 1; i <= 7; i++) {
                 const val = formData.get('q' + i);
                 if (val !== null) {
                     symptomScore += parseInt(val);
                     answeredCount++;
+                    
+                    // เก็บข้อความคำตอบที่เลือก
+                    const selectedLabel = document.querySelector(`input[name="q${i}"]:checked`).parentElement.innerText.trim();
+                    answersDetails.push({ q: questions[i-1], a: selectedLabel });
                 }
             }
 
@@ -217,24 +235,50 @@
             const desc = document.getElementById('result-desc');
             const icon = document.getElementById('result-icon');
 
-            modal.classList.remove('hidden');
+            let resultStatus = "";
+            let colorCode = "";
 
             if (symptomScore <= 4) {
-                icon.innerText = "✅"; 
-                title.innerText = "ควบคุมได้ดีเยี่ยม"; 
-                title.className = "text-2xl font-bold mb-2 text-emerald-500";
+                icon.innerText = "✅";
+                resultStatus = "ควบคุมได้ดีเยี่ยม";
+                colorCode = "emerald-500";
                 desc.innerText = "คุณแทบไม่มีอาการรบกวนในชีวิตประจำวัน สุขภาพปอดของคุณแข็งแรงดีมาก";
             } else if (symptomScore <= 9) {
-                icon.innerText = "⚠️"; 
-                title.innerText = "ควบคุมได้บางส่วน"; 
-                title.className = "text-2xl font-bold mb-2 text-yellow-500";
+                icon.innerText = "⚠️";
+                resultStatus = "ควบคุมได้บางส่วน";
+                colorCode = "yellow-500";
                 desc.innerText = "เริ่มมีอาการรบกวนบ้าง ควรพกยาพ่นฉุกเฉินติดตัวและหลีกเลี่ยงสิ่งกระตุ้น";
             } else {
-                icon.innerText = "🚨"; 
-                title.innerText = "ควบคุมไม่ได้ / เสี่ยงสูง"; 
-                title.className = "text-2xl font-bold mb-2 text-red-500";
+                icon.innerText = "🚨";
+                resultStatus = "ควบคุมไม่ได้ / เสี่ยงสูง";
+                colorCode = "red-500";
                 desc.innerText = "อาการของคุณรบกวนการใช้ชีวิตมาก มีความเสี่ยงหอบกำเริบ ควรปรึกษาแพทย์โดยเร็ว";
             }
+
+            title.innerText = resultStatus;
+            title.className = `text-2xl font-bold mb-2 text-${colorCode}`;
+            modal.classList.remove('hidden');
+
+            // บันทึกลง LocalStorage ทันที
+            saveToHistory(symptomScore, resultStatus, colorCode, answersDetails);
+        }
+
+        function saveToHistory(score, result, color, details) {
+            const history = JSON.parse(localStorage.getItem('asthma_history') || '[]');
+            
+            const newRecord = {
+                timestamp: new Date().toISOString(),
+                score: score,
+                result: result,
+                color: color,
+                answers: details // บันทึกชุดคำตอบรายข้อลงไปด้วย
+            };
+
+            history.push(newRecord);
+            // เก็บสูงสุด 30 รายการ
+            if (history.length > 30) history.shift();
+            
+            localStorage.setItem('asthma_history', JSON.stringify(history));
         }
     </script>
 </body>

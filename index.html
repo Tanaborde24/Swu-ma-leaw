@@ -12,13 +12,51 @@
         .progress-ring__circle { transition: stroke-dashoffset 0.8s ease, stroke 0.5s ease; transform: rotate(-90deg); transform-origin: 50% 50%; }
         .risk-bar-bg { height: 12px; border-radius: 6px; background: linear-gradient(to right, #3b82f6 0%, #22c55e 25%, #eab308 50%, #f97316 75%, #ef4444 100%); }
         .risk-pointer { transition: left 0.5s ease; }
+        
+        /* Side Menu Animation */
+        #side-menu { transition: transform 0.3s ease-in-out; transform: translateX(-100%); }
+        #side-menu.active { transform: translateX(0); }
+        .menu-overlay { display: none; background: rgba(0,0,0,0.5); }
+        .menu-overlay.active { display: block; }
     </style>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2563eb">
 </head>
 <body class="bg-slate-50 pb-32 text-gray-800">
-    <header class="bg-blue-600 text-white p-5 text-center sticky top-0 z-50 shadow-md">
-        <h1 class="text-xl font-medium">Helper asthma</h1>
+
+    <div id="menu-overlay" class="menu-overlay fixed inset-0 z-[60]" onclick="toggleMenu()"></div>
+
+    <div id="side-menu" class="fixed top-0 left-0 h-full w-64 bg-white z-[70] shadow-2xl p-5">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="font-bold text-xl text-blue-600">เมนูใช้งาน</h2>
+            <button onclick="toggleMenu()" class="text-gray-500"><i class="fa-solid fa-xmark text-xl"></i></button>
+        </div>
+        <nav class="space-y-4">
+            <button onclick="showLogin()" class="w-full flex items-center gap-3 p-4 hover:bg-blue-50 rounded-2xl transition-all">
+                <i class="fa-solid fa-user-circle text-2xl text-blue-600"></i>
+                <div class="text-left">
+                    <p id="login-status-text" class="font-bold text-sm">เข้าสู่ระบบ</p>
+                    <p class="text-[10px] text-gray-400">ซิงค์ข้อมูลประวัติของคุณ</p>
+                </div>
+            </button>
+            <a href="history.html" class="block flex items-center gap-3 p-4 hover:bg-blue-50 rounded-2xl transition-all">
+                <i class="fa-solid fa-clock-rotate-left text-blue-600"></i>
+                <span class="font-medium">ประวัติการประเมิน</span>
+            </a>
+            <hr class="border-gray-100">
+            <button onclick="logout()" id="logout-btn" class="hidden w-full flex items-center gap-3 p-4 text-red-500 hover:bg-red-50 rounded-2xl transition-all">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span class="font-medium">ออกจากระบบ</span>
+            </button>
+        </nav>
+    </div>
+
+    <header class="bg-blue-600 text-white p-5 sticky top-0 z-50 shadow-md flex justify-between items-center">
+        <button onclick="toggleMenu()" class="p-2 -ml-2 active:scale-90 transition-transform">
+            <i class="fa-solid fa-bars text-xl"></i>
+        </button>
+        <h1 class="text-lg font-medium">Helper asthma</h1>
+        <div class="w-8"></div>
     </header>
 
     <main class="p-5 max-w-md mx-auto">
@@ -57,27 +95,30 @@
 
         <div class="flex justify-between gap-3 mb-6">
             <a href="assessment.html" class="flex-1 bg-white py-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center active:scale-95 transition-all">
-                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-2">
-                    <i class="fa-solid fa-clipboard-check"></i>
-                </div>
+                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-2"><i class="fa-solid fa-clipboard-check"></i></div>
                 <span class="font-bold text-[10px]">แบบประเมิน</span>
             </a>
-
             <button onclick="confirmEmergencyCall()" class="flex-1 bg-red-600 py-4 rounded-2xl shadow-lg flex flex-col items-center justify-center text-white active:scale-95 transition-all">
-                <div class="w-10 h-10 rounded-full bg-white text-red-600 flex items-center justify-center mb-2 shadow-sm">
-                    <i class="fa-solid fa-phone-flip animate-pulse"></i>
-                </div>
+                <div class="w-10 h-10 rounded-full bg-white text-red-600 flex items-center justify-center mb-2"><i class="fa-solid fa-phone-flip animate-pulse"></i></div>
                 <span class="font-bold text-[10px] uppercase">โทร 1669</span>
             </button>
-
             <a href="location.html" class="flex-1 bg-white py-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center active:scale-95 transition-all">
-                <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mb-2">
-                    <i class="fa-solid fa-pills"></i>
-                </div>
+                <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mb-2"><i class="fa-solid fa-pills"></i></div>
                 <span class="font-bold text-[10px]">ร้านยา</span>
             </a>
         </div>
     </main>
+
+    <div id="login-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50" onclick="closeLogin()"></div>
+        <div class="bg-white rounded-[2rem] p-8 z-10 w-full max-w-xs text-center shadow-2xl">
+            <h3 class="text-xl font-bold mb-6">เข้าสู่ระบบ</h3>
+            <input type="text" id="username" placeholder="ชื่อผู้ใช้งาน" class="w-full border border-gray-200 p-3 rounded-xl mb-3 focus:ring-2 focus:ring-blue-500 outline-none">
+            <input type="password" id="password" placeholder="รหัสผ่าน" class="w-full border border-gray-200 p-3 rounded-xl mb-6 focus:ring-2 focus:ring-blue-500 outline-none">
+            <button onclick="handleLogin()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold mb-3 shadow-lg shadow-blue-200">เข้าสู่ระบบ</button>
+            <button onclick="closeLogin()" class="text-gray-400 text-sm">ไว้ภายหลัง</button>
+        </div>
+    </div>
 
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around p-3 pb-6 z-50">
         <a href="index.html" class="flex flex-col items-center text-blue-600"><i class="fa-solid fa-house text-xl mb-1"></i><span class="text-[10px] font-bold">หน้าหลัก</span></a>
@@ -88,6 +129,59 @@
     <script>
         const CIRCUMFERENCE = 534;
 
+        // --- ระบบเมนูและ Login ---
+        function toggleMenu() {
+            document.getElementById('side-menu').classList.toggle('active');
+            document.getElementById('menu-overlay').classList.toggle('active');
+        }
+
+        function showLogin() {
+            if(localStorage.getItem('isLoggedIn') === 'true') return; // ถ้าล็อกอินแล้วไม่เปิด
+            toggleMenu();
+            document.getElementById('login-modal').classList.remove('hidden');
+        }
+
+        function closeLogin() {
+            document.getElementById('login-modal').classList.add('hidden');
+        }
+
+        function handleLogin() {
+            const user = document.getElementById('username').value;
+            if(user.trim() !== "") {
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('userName', user);
+                checkLoginStatus();
+                closeLogin();
+                alert('สวัสดีครับ คุณ ' + user);
+            } else {
+                alert('กรุณากรอกชื่อผู้ใช้งาน');
+            }
+        }
+
+        function logout() {
+            if(confirm('ยืนยันการออกจากระบบ?')) {
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('userName');
+                checkLoginStatus();
+                toggleMenu();
+            }
+        }
+
+        function checkLoginStatus() {
+            const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const statusText = document.getElementById('login-status-text');
+            const logoutBtn = document.getElementById('logout-btn');
+            
+            if(loggedIn) {
+                statusText.innerText = localStorage.getItem('userName');
+                logoutBtn.classList.remove('hidden');
+            } else {
+                statusText.innerText = 'เข้าสู่ระบบ';
+                logoutBtn.classList.add('hidden');
+            }
+        }
+
+        // --- ระบบ AQI และตำแหน่ง ---
         function confirmEmergencyCall() {
             if (confirm("⚠️ คุณต้องการโทรสายด่วนฉุกเฉิน 1669 ใช่หรือไม่?")) {
                 window.location.href = "tel:1669";
@@ -136,14 +230,10 @@
         }
 
         window.onload = () => {
+            checkLoginStatus();
             initLocation();
             if ('serviceWorker' in navigator) {
-                // เพิ่ม ?v=2 เพื่อบังคับให้ Browser ลงทะเบียน SW ตัวใหม่
-                navigator.serviceWorker.register('sw.js?v=2')
-                .then(reg => {
-                    console.log('PWA: Ready');
-                    reg.update(); // บังคับเช็กเวอร์ชันใหม่ทันที
-                });
+                navigator.serviceWorker.register('sw.js?v=3').then(reg => reg.update());
             }
         };
     </script>
