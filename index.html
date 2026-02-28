@@ -136,7 +136,8 @@
                 </div>
                 <span class="font-bold text-[10px]">ร้านยา</span>
             </a>
-            <button onclick="confirmEmergencyCall()" class="bg-red-600 py-4 rounded-2xl shadow-lg flex flex-col items-center justify-center text-white active:scale-95 transition-all">
+
+            <button onclick="confirmEmergencyCall()" class="col-span-2 bg-red-600 py-4 rounded-2xl shadow-lg flex flex-col items-center justify-center text-white active:scale-95 transition-all">
                 <div class="w-10 h-10 rounded-full bg-white text-red-600 flex items-center justify-center mb-2">
                     <i class="fa-solid fa-phone-flip animate-pulse"></i>
                 </div>
@@ -145,29 +146,6 @@
         </div>
     </main>
 
-    <div id="login-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-md">
-        <div class="absolute inset-0 bg-blue-900/40"></div>
-        <div class="bg-white rounded-[2.5rem] p-8 z-10 w-full max-w-sm text-center shadow-2xl relative">
-            <div class="mb-6">
-                <div class="bg-blue-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <i id="modal-icon" class="fa-solid fa-user-plus text-2xl text-blue-600"></i>
-                </div>
-                <h3 id="modal-title" class="text-2xl font-black text-gray-800">ลงทะเบียน</h3>
-            </div>
-            <div class="space-y-3 mb-8 text-left">
-                <input type="text" id="username" placeholder="ชื่อเล่นของคุณ" class="w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl outline-none text-sm">
-                <div class="grid grid-cols-3 gap-2">
-                    <input type="number" id="user-age" placeholder="อายุ" class="w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl outline-none text-sm">
-                    <input type="number" id="user-height" placeholder="สูง" class="w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl outline-none text-sm">
-                    <input type="number" id="user-weight" placeholder="หนัก" class="w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl outline-none text-sm">
-                </div>
-                <input type="text" id="user-meds" placeholder="ยาพ่นที่ใช้บ่อย" class="w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl outline-none text-sm">
-            </div>
-            <button onclick="handleLogin()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-xl shadow-blue-200 active:scale-95 transition-all">บันทึกข้อมูล</button>
-            <button id="cancel-edit-btn" onclick="closeModal()" class="hidden w-full mt-2 text-gray-400 py-2 text-sm font-bold uppercase tracking-wider">ยกเลิก</button>
-        </div>
-    </div>
-
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around p-3 pb-6 z-50">
         <a href="index.html" class="flex flex-col items-center text-blue-600"><i class="fa-solid fa-house text-xl mb-1"></i><span class="text-[10px] font-bold">หน้าหลัก</span></a>
         <a href="assessment.html" class="flex flex-col items-center text-gray-400"><i class="fa-solid fa-list-ul text-xl mb-1"></i><span class="text-[10px] font-bold">ประเมิน</span></a>
@@ -175,21 +153,14 @@
     </nav>
 
     <script>
+        // ... (โค้ด JavaScript ทั้งหมดคงเดิมตามที่คุณส่งมา) ...
         const CIRCUMFERENCE = 534;
 
-        // --- ระบบ Puffer Tracker + Auto Save at Midnight ---
         function updatePufferUI() {
             const today = new Date().toLocaleDateString('th-TH');
             const savedData = JSON.parse(localStorage.getItem('puffer_tracker') || '{"count":0}');
-            
-            // ตรวจสอบการเปลี่ยนวัน (Midnight Check)
             if (savedData.date && savedData.date !== today) {
-                // บันทึกยอดสรุปของวันก่อนหน้าลงในหน้าประวัติ (ถ้าเคยมียอดพ่น)
-                if (savedData.count > 0) {
-                    saveSummaryToHistory(savedData.date, savedData.count);
-                }
-                
-                // รีเซ็ตยอดใหม่สำหรับวันนี้
+                if (savedData.count > 0) saveSummaryToHistory(savedData.date, savedData.count);
                 const newData = { date: today, count: 0 };
                 localStorage.setItem('puffer_tracker', JSON.stringify(newData));
                 document.getElementById('puffer-count').innerText = 0;
@@ -198,15 +169,12 @@
                 localStorage.setItem('puffer_tracker', JSON.stringify(savedData));
                 document.getElementById('puffer-count').innerText = savedData.count || 0;
             }
-
-            // อัปเดตตัวเลขใน Advice Card หาก AQI โหลดเสร็จแล้ว
             const checklist = document.getElementById('checklist-text');
             if (checklist) checklist.innerText = "ยอดพ่นยาปัจจุบัน: " + (savedData.count || 0) + " ครั้ง";
         }
 
         function saveSummaryToHistory(targetDate, finalCount) {
             let history = JSON.parse(localStorage.getItem('asthma_history') || '[]');
-            
             const logEntry = {
                 timestamp: new Date().toISOString(), 
                 result: `สรุปยอดพ่นยาประจำวันที่ ${targetDate}`,
@@ -217,7 +185,6 @@
                     { q: "สถานะ", a: "บันทึกอัตโนมัติ (ข้ามวัน)" }
                 ]
             };
-            
             history.unshift(logEntry);
             localStorage.setItem('asthma_history', JSON.stringify(history));
         }
@@ -225,24 +192,18 @@
         function updatePufferCount(change) {
             const today = new Date().toLocaleDateString('th-TH');
             let savedData = JSON.parse(localStorage.getItem('puffer_tracker') || '{"count":0}');
-            
             let newCount = (savedData.count || 0) + change;
             if (newCount < 0) return; 
-
             savedData.count = newCount;
             savedData.date = today;
             localStorage.setItem('puffer_tracker', JSON.stringify(savedData));
-            
             document.getElementById('puffer-count').innerText = newCount;
             document.getElementById('checklist-text').innerText = "ยอดพ่นยาปัจจุบัน: " + newCount + " ครั้ง";
-
-            // Visual Effect
             const el = document.getElementById('puffer-count');
             el.classList.add('scale-125');
             setTimeout(() => el.classList.remove('scale-125'), 150);
         }
 
-        // --- Profile & UI Logic ---
         function toggleMenu() {
             document.getElementById('side-menu').classList.toggle('active');
             document.getElementById('menu-overlay').classList.toggle('active');
@@ -268,9 +229,7 @@
             const height = document.getElementById('user-height').value;
             const weight = document.getElementById('user-weight').value;
             const meds = document.getElementById('user-meds').value.trim();
-
             if(!user || !age || !height || !weight) { alert('กรุณากรอกข้อมูลให้ครบครับ'); return; }
-
             localStorage.setItem('isLoggedIn', 'true');
             localStorage.setItem('userName', user);
             localStorage.setItem('userAge', age);
@@ -298,7 +257,6 @@
             if(confirm('ออกจากระบบ? ข้อมูลทั้งหมดจะถูกลบ')) { localStorage.clear(); location.reload(); }
         }
 
-        // --- AQI Data Logic ---
         function initLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(fetchData, () => { 
@@ -327,13 +285,10 @@
             const textEl = document.getElementById('aqi-status-text');
             textEl.innerText = config.status;
             textEl.style.color = config.color;
-            
             const circle = document.getElementById('aqi-circle');
             circle.style.stroke = config.color;
             circle.style.strokeDashoffset = CIRCUMFERENCE - (Math.min(aqi, 200) / 200) * CIRCUMFERENCE;
-            
             document.getElementById('risk-pointer').style.left = config.pos;
-            
             const card = document.getElementById('asthma-advice-card');
             card.classList.remove('hidden');
             card.style.borderColor = config.color;
