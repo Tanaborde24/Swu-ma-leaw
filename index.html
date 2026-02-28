@@ -17,9 +17,11 @@
         .menu-overlay { display: none; background: rgba(0,0,0,0.5); }
         .menu-overlay.active { display: block; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .animate-fade { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#3b82f6">
 </head>
 <body class="bg-slate-50 pb-32 text-gray-800">
 
@@ -147,7 +149,7 @@
         </div>
     </main>
 
-    <div id="login-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-md">
+    <div id="login-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-md hidden">
         <div class="absolute inset-0 bg-blue-900/40"></div>
         <div class="bg-white rounded-[2.5rem] p-8 z-10 w-full max-w-sm text-center shadow-2xl relative">
             <div class="mb-6">
@@ -155,18 +157,19 @@
                     <i id="modal-icon" class="fa-solid fa-user-plus text-2xl text-blue-600"></i>
                 </div>
                 <h3 id="modal-title" class="text-2xl font-black text-gray-800">ลงทะเบียน</h3>
+                <p id="modal-desc" class="text-xs text-gray-400 mt-1">กรุณากรอกข้อมูลเพื่อเริ่มต้นการใช้งาน</p>
             </div>
             <div class="space-y-3 mb-8 text-left">
-                <input type="text" id="username" placeholder="ชื่อเล่นของคุณ" class="w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl outline-none text-sm">
+                <input type="text" id="username" placeholder="ชื่อเล่นของคุณ" class="w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl outline-none text-sm focus:border-blue-400 transition-colors">
                 <div class="grid grid-cols-3 gap-2">
-                    <input type="number" id="user-age" placeholder="อายุ" class="w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl outline-none text-sm">
-                    <input type="number" id="user-height" placeholder="สูง" class="w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl outline-none text-sm">
-                    <input type="number" id="user-weight" placeholder="หนัก" class="w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl outline-none text-sm">
+                    <input type="number" id="user-age" placeholder="อายุ" class="w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl outline-none text-sm focus:border-blue-400">
+                    <input type="number" id="user-height" placeholder="สูง" class="w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl outline-none text-sm focus:border-blue-400">
+                    <input type="number" id="user-weight" placeholder="หนัก" class="w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl outline-none text-sm focus:border-blue-400">
                 </div>
-                <input type="text" id="user-meds" placeholder="ยาพ่นที่ใช้บ่อย" class="w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl outline-none text-sm">
+                <input type="text" id="user-meds" placeholder="ยาพ่นที่ใช้บ่อย" class="w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl outline-none text-sm focus:border-blue-400">
             </div>
             <button onclick="handleLogin()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-xl shadow-blue-200 active:scale-95 transition-all">บันทึกข้อมูล</button>
-            <button id="cancel-edit-btn" onclick="closeModal()" class="hidden w-full mt-2 text-gray-400 py-2 text-sm font-bold uppercase tracking-wider">ยกเลิก</button>
+            <button id="cancel-edit-btn" onclick="closeModal()" class="hidden w-full mt-2 text-gray-400 py-2 text-sm font-bold uppercase tracking-wider">ยกเลิกการแก้ไข</button>
         </div>
     </div>
 
@@ -179,19 +182,13 @@
     <script>
         const CIRCUMFERENCE = 534;
 
-        // --- ระบบ Puffer Tracker + Auto Save at Midnight ---
+        // --- ระบบ Puffer Tracker ---
         function updatePufferUI() {
             const today = new Date().toLocaleDateString('th-TH');
             const savedData = JSON.parse(localStorage.getItem('puffer_tracker') || '{"count":0}');
             
-            // ตรวจสอบการเปลี่ยนวัน (Midnight Check)
             if (savedData.date && savedData.date !== today) {
-                // บันทึกยอดสรุปของวันก่อนหน้าลงในหน้าประวัติ (ถ้าเคยมียอดพ่น)
-                if (savedData.count > 0) {
-                    saveSummaryToHistory(savedData.date, savedData.count);
-                }
-                
-                // รีเซ็ตยอดใหม่สำหรับวันนี้
+                if (savedData.count > 0) saveSummaryToHistory(savedData.date, savedData.count);
                 const newData = { date: today, count: 0 };
                 localStorage.setItem('puffer_tracker', JSON.stringify(newData));
                 document.getElementById('puffer-count').innerText = 0;
@@ -201,33 +198,13 @@
                 document.getElementById('puffer-count').innerText = savedData.count || 0;
             }
 
-            // อัปเดตตัวเลขใน Advice Card หาก AQI โหลดเสร็จแล้ว
             const checklist = document.getElementById('checklist-text');
             if (checklist) checklist.innerText = "ยอดพ่นยาปัจจุบัน: " + (savedData.count || 0) + " ครั้ง";
-        }
-
-        function saveSummaryToHistory(targetDate, finalCount) {
-            let history = JSON.parse(localStorage.getItem('asthma_history') || '[]');
-            
-            const logEntry = {
-                timestamp: new Date().toISOString(), 
-                result: `สรุปยอดพ่นยาประจำวันที่ ${targetDate}`,
-                color: "blue-500",
-                answers: [
-                    { q: "วันที่สรุป", a: targetDate },
-                    { q: "ยอดพ่นยารวม", a: `${finalCount} ครั้ง` },
-                    { q: "สถานะ", a: "บันทึกอัตโนมัติ (ข้ามวัน)" }
-                ]
-            };
-            
-            history.unshift(logEntry);
-            localStorage.setItem('asthma_history', JSON.stringify(history));
         }
 
         function updatePufferCount(change) {
             const today = new Date().toLocaleDateString('th-TH');
             let savedData = JSON.parse(localStorage.getItem('puffer_tracker') || '{"count":0}');
-            
             let newCount = (savedData.count || 0) + change;
             if (newCount < 0) return; 
 
@@ -238,29 +215,46 @@
             document.getElementById('puffer-count').innerText = newCount;
             document.getElementById('checklist-text').innerText = "ยอดพ่นยาปัจจุบัน: " + newCount + " ครั้ง";
 
-            // Visual Effect
             const el = document.getElementById('puffer-count');
             el.classList.add('scale-125');
             setTimeout(() => el.classList.remove('scale-125'), 150);
         }
 
-        // --- Profile & UI Logic ---
-        function toggleMenu() {
-            document.getElementById('side-menu').classList.toggle('active');
-            document.getElementById('menu-overlay').classList.toggle('active');
+        function saveSummaryToHistory(targetDate, finalCount) {
+            let history = JSON.parse(localStorage.getItem('asthma_history') || '[]');
+            const logEntry = {
+                timestamp: new Date().toISOString(), 
+                result: `สรุปยอดพ่นยาประจำวันที่ ${targetDate}`,
+                color: "blue-500",
+                answers: [
+                    { q: "วันที่สรุป", a: targetDate },
+                    { q: "ยอดพ่นยารวม", a: `${finalCount} ครั้ง` },
+                    { q: "สถานะ", a: "บันทึกอัตโนมัติ" }
+                ]
+            };
+            history.unshift(logEntry);
+            localStorage.setItem('asthma_history', JSON.stringify(history));
         }
 
+        // --- ระบบ Login & Profile (จุดที่แก้ไข) ---
+        
         function checkLoginStatus() {
             const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const modal = document.getElementById('login-modal');
+            
             if(loggedIn) {
-                document.getElementById('login-modal').classList.add('hidden');
+                // ถ้าล็อกอินแล้ว ให้ปิด Modal และแสดงข้อมูล
+                modal.classList.add('hidden');
                 document.getElementById('login-status-text').innerText = localStorage.getItem('userName');
                 document.getElementById('display-age').innerText = localStorage.getItem('userAge');
                 document.getElementById('display-height').innerText = localStorage.getItem('userHeight');
                 document.getElementById('display-weight').innerText = localStorage.getItem('userWeight');
                 document.getElementById('display-meds').innerText = localStorage.getItem('userMeds');
             } else {
-                document.getElementById('login-modal').classList.remove('hidden');
+                // ถ้ายังไม่ล็อกอิน ให้แสดง Modal และ "ซ่อน" ปุ่มยกเลิก (บังคับกรอก)
+                modal.classList.remove('hidden');
+                document.getElementById('cancel-edit-btn').classList.add('hidden');
+                document.getElementById('modal-title').innerText = "ลงทะเบียน";
             }
         }
 
@@ -271,7 +265,10 @@
             const weight = document.getElementById('user-weight').value;
             const meds = document.getElementById('user-meds').value.trim();
 
-            if(!user || !age || !height || !weight) { alert('กรุณากรอกข้อมูลให้ครบครับ'); return; }
+            if(!user || !age || !height || !weight) { 
+                alert('กรุณากรอกข้อมูลสำคัญ (ชื่อ, อายุ, ส่วนสูง, น้ำหนัก) ให้ครบถ้วนครับ'); 
+                return; 
+            }
 
             localStorage.setItem('isLoggedIn', 'true');
             localStorage.setItem('userName', user);
@@ -279,14 +276,21 @@
             localStorage.setItem('userHeight', height);
             localStorage.setItem('userWeight', weight);
             localStorage.setItem('userMeds', meds || 'ไม่มีข้อมูล');
+            
+            // ปิด Modal และอัปเดต UI ทันทีไม่ต้องโหลดใหม่ก็ได้ แต่ reload จะเคลียร์ State ได้สะอาดกว่า
             location.reload();
         }
 
         function openEditProfile() {
             toggleMenu();
-            document.getElementById('login-modal').classList.remove('hidden');
+            const modal = document.getElementById('login-modal');
+            modal.classList.remove('hidden');
+            
+            // แสดงปุ่มยกเลิกเฉพาะตอนแก้ไข
             document.getElementById('cancel-edit-btn').classList.remove('hidden');
-            document.getElementById('modal-title').innerText = "แก้ไขข้อมูล";
+            document.getElementById('modal-title').innerText = "แก้ไขข้อมูลส่วนตัว";
+            
+            // ดึงค่าเก่ามาใส่ใน Input
             document.getElementById('username').value = localStorage.getItem('userName');
             document.getElementById('user-age').value = localStorage.getItem('userAge');
             document.getElementById('user-height').value = localStorage.getItem('userHeight');
@@ -294,17 +298,30 @@
             document.getElementById('user-meds').value = localStorage.getItem('userMeds');
         }
 
-        function closeModal() { document.getElementById('login-modal').classList.add('hidden'); }
+        function closeModal() { 
+            // ปิดได้เฉพาะกรณีที่ล็อกอินอยู่แล้วเท่านั้น (ใช้ตอนกด "ยกเลิกการแก้ไข")
+            if(localStorage.getItem('isLoggedIn') === 'true') {
+                document.getElementById('login-modal').classList.add('hidden'); 
+            }
+        }
 
         function logout() {
-            if(confirm('ออกจากระบบ? ข้อมูลทั้งหมดจะถูกลบ')) { localStorage.clear(); location.reload(); }
+            if(confirm('ต้องการออกจากระบบ? ข้อมูลบันทึกทั้งหมดจะถูกลบออกจากเครื่องนี้')) { 
+                localStorage.clear(); 
+                location.reload(); 
+            }
+        }
+
+        function toggleMenu() {
+            document.getElementById('side-menu').classList.toggle('active');
+            document.getElementById('menu-overlay').classList.toggle('active');
         }
 
         // --- AQI Data Logic ---
         function initLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(fetchData, () => { 
-                    document.getElementById('aqi-status-text').innerText = "โปรดเปิด GPS"; 
+                    document.getElementById('aqi-status-text').innerText = "โปรดเปิด GPS เพื่อดูค่าฝุ่น"; 
                 });
             }
         }
@@ -349,14 +366,16 @@
             if (confirm("⚠️ ต้องการโทรสายด่วน 1669 ทันที?")) window.location.href = "tel:1669";
         }
 
-         window.onload = () => {
-            initLocation(); // เรียกฟังก์ชันดึงค่าฝุ่นเดิม
+        // --- Initial Load ---
+        window.onload = () => {
+            checkLoginStatus(); // เช็ค Login ก่อน
+            updatePufferUI();   // อัปเดตยอดพ่นยา
+            initLocation();     // ดึงค่าฝุ่น
 
-            // ตรวจสอบว่า Browser รองรับ Service Worker หรือไม่
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('PWA: Service Worker จดทะเบียนเรียบร้อย!', reg))
-                .catch(err => console.error('PWA: ลงทะเบียนล้มเหลว', err));
+                .then(reg => console.log('PWA Ready'))
+                .catch(err => console.log('PWA Error', err));
             }
         };
     </script>
