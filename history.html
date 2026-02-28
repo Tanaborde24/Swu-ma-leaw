@@ -11,7 +11,7 @@
         body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; }
         
         .detail-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        .expanded .detail-content { max-height: 1000px; } /* ขยายให้พอดีกับเนื้อหา */
+        .expanded .detail-content { max-height: 1000px; } 
         .expanded .fa-chevron-right { transform: rotate(90deg); color: #3b82f6; }
         .fa-chevron-right { transition: transform 0.3s ease; }
         
@@ -29,7 +29,7 @@
             <a href="index.html" class="text-gray-400 active:scale-90 transition-transform">
                 <i class="fa-solid fa-chevron-left text-xl"></i>
             </a>
-            <h1 class="text-xl font-bold text-gray-800">ประวัติการประเมิน</h1>
+            <h1 class="text-xl font-bold text-gray-800">ประวัติการใช้งาน</h1>
         </div>
         
         <button id="clear-button" onclick="clearHistory()" class="w-10 h-10 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-full transition-all active:scale-90">
@@ -38,12 +38,11 @@
     </header>
 
     <main class="p-5 max-w-md mx-auto">
-        <div id="history-list" class="space-y-4">
-            </div>
+        <h2 id="history-label" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 px-2">รายการประวัติและสรุปยอดรายวัน</h2>
+        <div id="history-list" class="space-y-4"></div>
     </main>
 
     <script>
-        // ฟังก์ชันช่วยเลือกสีให้ Tailwind เข้าใจ
         function getBorderColor(colorName) {
             const colors = {
                 'blue-500': 'border-blue-500',
@@ -58,19 +57,19 @@
         function loadHistory() {
             const container = document.getElementById('history-list');
             const clearBtn = document.getElementById('clear-button');
-            const rawData = localStorage.getItem('asthma_history');
-            const logs = JSON.parse(rawData || '[]');
+            const label = document.getElementById('history-label');
+            const logs = JSON.parse(localStorage.getItem('asthma_history') || '[]');
 
             if (logs.length === 0) {
                 clearBtn.style.visibility = 'hidden'; 
-                // ลบ div ที่มีคลาส bg-blue-50 w-24 h-24 rounded-full ออก
+                label.style.display = 'none';
                 container.innerHTML = `
                     <div class="text-center py-24 animate-fade">
                         <div class="flex items-center justify-center mx-auto mb-6">
                             <i class="fa-solid fa-file-circle-plus text-4xl text-blue-200"></i>
                         </div>
-                        <h3 class="text-xl font-bold text-gray-700 mb-2">ยังไม่มีข้อมูลการประเมิน</h3>
-                        <p class="text-sm text-gray-400 mb-8 px-8">เริ่มต้นตอนนี้เพื่อติดตามอาการของคุณ</p>
+                        <h3 class="text-xl font-bold text-gray-700 mb-2">ยังไม่มีข้อมูลประวัติ</h3>
+                        <p class="text-sm text-gray-400 mb-8 px-8">เริ่มต้นการประเมิน หรือบันทึกการพ่นยาเพื่อให้ระบบสรุปยอดรายวันให้คุณ</p>
                         <a href="assessment.html" class="bg-blue-600 text-white px-10 py-4 rounded-2xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all inline-block">
                             เริ่มทำแบบประเมิน
                         </a>
@@ -80,6 +79,7 @@
             }
 
             clearBtn.style.visibility = 'visible';
+            label.style.display = 'block';
 
             // แสดงรายการโดยเรียงจากใหม่ไปเก่า
             container.innerHTML = logs.slice().reverse().map((log, index) => {
@@ -88,13 +88,12 @@
                 });
 
                 const borderClass = getBorderColor(log.color);
-
                 const answersHTML = log.answers ? log.answers.map(ans => `
                     <div class="flex justify-between items-start gap-4 py-2 border-b border-gray-50 last:border-0">
                         <span class="text-[11px] text-gray-500 leading-tight">${ans.q}</span>
                         <span class="text-[11px] font-bold text-gray-700 text-right">${ans.a}</span>
                     </div>
-                `).join('') : '<p class="text-xs text-gray-400 text-center py-2">ไม่มีรายละเอียดข้อมูล</p>';
+                `).join('') : '';
 
                 return `
                     <div class="bg-white rounded-3xl shadow-sm border-l-4 ${borderClass} overflow-hidden animate-fade" id="item-${index}">
@@ -102,17 +101,15 @@
                             <div class="flex-1">
                                 <h3 class="font-bold text-gray-800 text-lg">${log.result}</h3>
                                 <p class="text-[11px] text-gray-400 font-medium italic">
-                                    <i class="fa-regular fa-calendar-check mr-1"></i> เมื่อ: ${date} น.
+                                    <i class="fa-regular fa-clock mr-1"></i> ${date} น.
                                 </p>
                             </div>
-                            <div class="flex items-center gap-3">
-                                <i class="fa-solid fa-chevron-right text-gray-300"></i>
-                            </div>
+                            <i class="fa-solid fa-chevron-right text-gray-300"></i>
                         </div>
                         <div class="detail-content bg-slate-50/50 px-5">
                             <div class="pb-6 pt-2">
                                 <div class="flex justify-between items-center mb-3">
-                                    <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">รายละเอียดที่คุณตอบ</p>
+                                    <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">รายละเอียดข้อมูล</p>
                                     <button onclick="deleteSingleLog(${logs.length - 1 - index})" class="text-red-300 hover:text-red-500 text-xs">
                                         ลบรายการนี้
                                     </button>
@@ -131,9 +128,8 @@
             document.getElementById(`item-${index}`).classList.toggle('expanded');
         }
 
-        // ฟังก์ชันลบเฉพาะรายการ
         function deleteSingleLog(originalIndex) {
-            if (confirm('ลบรายการประเมินนี้ใช่หรือไม่?')) {
+            if (confirm('ลบรายการนี้ใช่หรือไม่?')) {
                 let logs = JSON.parse(localStorage.getItem('asthma_history') || '[]');
                 logs.splice(originalIndex, 1);
                 localStorage.setItem('asthma_history', JSON.stringify(logs));
@@ -142,7 +138,7 @@
         }
 
         function clearHistory() {
-            if (confirm('⚠️ คุณต้องการลบประวัติการประเมินทั้งหมดใช่หรือไม่? (ไม่สามารถย้อนกลับได้)')) {
+            if (confirm('⚠️ ต้องการลบประวัติการใช้งานทั้งหมดใช่หรือไม่?')) {
                 localStorage.removeItem('asthma_history');
                 loadHistory(); 
             }
