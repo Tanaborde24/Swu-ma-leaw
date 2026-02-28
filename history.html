@@ -3,122 +3,274 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ประวัติ - Asthma Care</title>
+    <title>Asthma Care - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
-        body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; }
+        body { font-family: 'Kanit', sans-serif; }
+        .progress-ring__circle { transition: stroke-dashoffset 0.8s ease, stroke 0.5s ease; transform: rotate(-90deg); transform-origin: 50% 50%; }
+        .risk-bar-bg { height: 12px; border-radius: 6px; background: linear-gradient(to right, #3b82f6 0%, #22c55e 25%, #eab308 50%, #f97316 75%, #ef4444 100%); }
+        .risk-pointer { transition: left 0.5s ease; }
         
-        .detail-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        .expanded .detail-content { max-height: 600px; }
-        .expanded .fa-chevron-right { transform: rotate(90deg); color: #3b82f6; }
-        .fa-chevron-right { transition: transform 0.3s ease; }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        #side-menu { transition: transform 0.3s ease-in-out; transform: translateX(-100%); }
+        #side-menu.active { transform: translateX(0); }
+        .menu-overlay { display: none; background: rgba(0,0,0,0.5); }
+        .menu-overlay.active { display: block; }
+        .modal-open { overflow: hidden; }
+
+        /* ปรับแต่ง Input Number ให้ดูสะอาดตา */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; margin: 0; 
         }
-        .animate-fade { animation: fadeIn 0.5s ease-out forwards; }
     </style>
 </head>
-<body class="pb-20">
+<body class="bg-slate-50 pb-32 text-gray-800">
 
-    <header class="bg-white border-b border-gray-100 p-5 sticky top-0 z-50 flex items-center justify-between">
-        <div class="flex items-center gap-4">
-            <a href="index.html" class="text-gray-400 active:scale-90 transition-transform">
-                <i class="fa-solid fa-chevron-left text-xl"></i>
-            </a>
-            <h1 class="text-xl font-bold text-gray-800">ประวัติการประเมิน</h1>
+    <div id="menu-overlay" class="menu-overlay fixed inset-0 z-[60]" onclick="toggleMenu()"></div>
+
+    <div id="side-menu" class="fixed top-0 left-0 h-full w-64 bg-white z-[70] shadow-2xl p-5 overflow-y-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="font-bold text-xl text-blue-600">เมนูใช้งาน</h2>
+            <button onclick="toggleMenu()" class="text-gray-500"><i class="fa-solid fa-xmark text-xl"></i></button>
         </div>
-        
-        <button id="clear-button" onclick="clearHistory()" class="w-10 h-10 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-full transition-all active:scale-90">
-            <i class="fa-regular fa-trash-can text-lg"></i>
+        <nav class="space-y-4">
+            <div class="w-full flex items-center gap-3 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                <i class="fa-solid fa-user-circle text-2xl text-blue-600"></i>
+                <div class="text-left">
+                    <p id="login-status-text" class="font-bold text-sm">ผู้ใช้งาน</p>
+                    <p class="text-[10px] text-gray-400 font-medium">สถานะ: กำลังใช้งาน</p>
+                </div>
+            </div>
+
+            <div id="personal-info-section" class="mx-1 p-4 bg-slate-50 rounded-2xl border border-gray-100">
+                <h3 class="text-[11px] font-bold text-blue-600 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-id-card"></i> ข้อมูลส่วนตัว
+                </h3>
+                <div class="grid grid-cols-3 gap-2 text-center mb-3">
+                    <div class="bg-white p-2 rounded-lg shadow-sm">
+                        <p class="text-[9px] text-gray-400 uppercase">อายุ</p>
+                        <p id="display-age" class="text-xs font-bold text-slate-700">--</p>
+                    </div>
+                    <div class="bg-white p-2 rounded-lg shadow-sm">
+                        <p class="text-[9px] text-gray-400 uppercase">สูง</p>
+                        <p id="display-height" class="text-xs font-bold text-slate-700">--</p>
+                    </div>
+                    <div class="bg-white p-2 rounded-lg shadow-sm">
+                        <p class="text-[9px] text-gray-400 uppercase">หนัก</p>
+                        <p id="display-weight" class="text-xs font-bold text-slate-700">--</p>
+                    </div>
+                </div>
+                <div class="bg-white p-2 rounded-lg shadow-sm">
+                    <p class="text-[9px] text-gray-400">ยาประจำตัว:</p>
+                    <p id="display-meds" class="text-[11px] font-medium text-blue-800 truncate italic">--</p>
+                </div>
+            </div>
+
+            <a href="history.html" class="block flex items-center gap-3 p-4 hover:bg-blue-50 rounded-2xl transition-all font-medium text-sm">
+                <i class="fa-solid fa-clock-rotate-left text-blue-600"></i> ประวัติการประเมิน
+            </a>
+            <hr class="border-gray-100">
+            <button onclick="logout()" class="w-full flex items-center gap-3 p-4 text-red-500 hover:bg-red-50 rounded-2xl transition-all font-medium text-sm">
+                <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
+            </button>
+        </nav>
+    </div>
+
+    <header class="bg-blue-600 text-white p-5 sticky top-0 z-50 shadow-md flex justify-between items-center">
+        <button onclick="toggleMenu()" class="p-2 -ml-2 active:scale-90 transition-transform">
+            <i class="fa-solid fa-bars text-xl"></i>
         </button>
+        <h1 class="text-lg font-medium">Helper asthma</h1>
+        <div class="w-8"></div>
     </header>
 
     <main class="p-5 max-w-md mx-auto">
-        <div id="history-list" class="space-y-4">
+        <div class="bg-white rounded-[2rem] p-6 shadow-lg text-center mb-6 border border-gray-100">
+            <div class="relative inline-flex items-center justify-center mb-4">
+                <svg class="w-48 h-48">
+                    <circle class="text-gray-100" stroke-width="10" stroke="currentColor" fill="transparent" r="85" cx="96" cy="96" />
+                    <circle id="aqi-circle" class="progress-ring__circle" stroke-width="10" stroke-dasharray="534" stroke-dashoffset="534" stroke-linecap="round" stroke="currentColor" fill="transparent" r="85" cx="96" cy="96" />
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <span id="pm25-value" class="text-6xl font-bold">--</span>
+                    <span class="text-[10px] text-gray-400 font-bold uppercase mt-1">PM 2.5 (µg/m³)</span>
+                </div>
             </div>
+            <h2 id="aqi-status-text" class="text-2xl font-bold text-gray-400 mb-4 tracking-tight">กำลังคำนวณ...</h2>
+            <div class="relative pt-4 px-2">
+                <div class="flex justify-between text-[9px] mb-2 font-black text-slate-400 uppercase tracking-tighter">
+                    <span>ดีมาก</span><span>ดี</span><span>ปานกลาง</span><span>เริ่มมีผล</span><span>อันตราย</span>
+                </div>
+                <div class="risk-bar-bg w-full relative">
+                    <div id="risk-pointer" class="risk-pointer absolute top-[-5px] w-5 h-5 bg-white border-2 border-slate-700 rounded-full shadow-lg" style="left: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mb-6">
+            <a href="assessment.html" class="bg-white py-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center active:scale-95 transition-all">
+                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-2"><i class="fa-solid fa-clipboard-check"></i></div>
+                <span class="font-bold text-[10px]">แบบประเมิน</span>
+            </a>
+            <a href="map.html" class="bg-white py-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center active:scale-95 transition-all">
+                <div class="w-10 h-10 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center mb-2"><i class="fa-solid fa-map-location-dot"></i></div>
+                <span class="font-bold text-[10px]">แผนที่ฝุ่น</span>
+            </a>
+            <a href="location.html" class="bg-white py-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center active:scale-95 transition-all">
+                <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mb-2"><i class="fa-solid fa-pills"></i></div>
+                <span class="font-bold text-[10px]">ร้านยา</span>
+            </a>
+            <button onclick="confirmEmergencyCall()" class="bg-red-600 py-4 rounded-2xl shadow-lg flex flex-col items-center text-white active:scale-95 transition-all">
+                <div class="w-10 h-10 rounded-full bg-white text-red-600 flex items-center justify-center mb-2"><i class="fa-solid fa-phone-flip animate-pulse"></i></div>
+                <span class="font-bold text-[10px]">โทร 1669</span>
+            </button>
+        </div>
     </main>
 
-    <script>
-        function loadHistory() {
-            const container = document.getElementById('history-list');
-            const clearBtn = document.getElementById('clear-button');
-            const rawData = localStorage.getItem('asthma_history');
-            const logs = JSON.parse(rawData || '[]');
-
-            // ถ้าไม่มีประวัติ
-            if (logs.length === 0) {
-                // ซ่อนปุ่มถังขยะ
-                clearBtn.style.visibility = 'hidden'; 
+    <div id="login-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-md">
+        <div class="absolute inset-0 bg-blue-900/40"></div>
+        <div class="bg-white rounded-[2.5rem] p-8 z-10 w-full max-w-sm text-center shadow-2xl relative">
+            <div class="mb-6">
+                <div class="bg-blue-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-blue-600 text-2xl">
+                    <i class="fa-solid fa-user-plus"></i>
+                </div>
+                <h3 class="text-2xl font-black text-gray-800">ลงทะเบียน</h3>
+                <p class="text-xs text-gray-400 mt-1">กรุณากรอกข้อมูลเพื่อเริ่มใช้งานแอป</p>
+            </div>
+            
+            <div class="space-y-3 mb-8">
+                <input type="text" id="username" placeholder="ชื่อเล่นของคุณ" class="w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all">
                 
-                container.innerHTML = `
-                    <div class="text-center py-24 animate-fade">
-                        <div class="bg-blue-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <i class="fa-solid fa-file-circle-plus text-4xl text-blue-200"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-700 mb-2">ยังไม่มีข้อมูลการประเมิน</h3>
-                        <p class="text-sm text-gray-400 mb-8 px-8">เริ่มต้นตอนนี้เพื่อติดตามอาการของคุณ</p>
-                        <a href="assessment.html" class="bg-blue-600 text-white px-10 py-4 rounded-2xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all inline-block">
-                            เริ่มทำแบบประเมิน
-                        </a>
-                    </div>
-                `;
+                <div class="grid grid-cols-3 gap-2">
+                    <input type="number" id="user-age" min="1" max="120" placeholder="อายุ" class="num-check w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all">
+                    <input type="number" id="user-height" min="1" max="250" placeholder="สูง" class="num-check w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all">
+                    <input type="number" id="user-weight" min="1" max="300" placeholder="หนัก" class="num-check w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all">
+                </div>
+
+                <input type="text" id="user-meds" placeholder="ยาพ่นที่ใช้บ่อย (ถ้ามี)" class="w-full bg-slate-50 border border-gray-100 p-4 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all">
+            </div>
+
+            <button onclick="handleLogin()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-xl shadow-blue-200 active:scale-95 transition-all">บันทึกข้อมูลและเริ่มต้น</button>
+            <p class="text-[10px] text-red-400 mt-4 font-bold uppercase tracking-widest">* ข้อมูลจะถูกเก็บในเครื่องนี้เท่านั้น</p>
+        </div>
+    </div>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around p-3 pb-6 z-50">
+        <a href="index.html" class="flex flex-col items-center text-blue-600"><i class="fa-solid fa-house text-xl mb-1"></i><span class="text-[10px] font-bold">หน้าหลัก</span></a>
+        <a href="assessment.html" class="flex flex-col items-center text-gray-400"><i class="fa-solid fa-list-ul text-xl mb-1"></i><span class="text-[10px] font-bold">ประเมิน</span></a>
+        <a href="map.html" class="flex flex-col items-center text-gray-400"><i class="fa-solid fa-map-location-dot text-xl mb-1"></i><span class="text-[10px] font-bold">แผนที่</span></a>
+        <a href="location.html" class="flex flex-col items-center text-gray-400"><i class="fa-solid fa-location-dot text-xl mb-1"></i><span class="text-[10px] font-bold">ร้านยา</span></a>
+    </nav>
+
+    <script>
+        // --- ระบบความปลอดภัยข้อมูล (ห้ามเลขติดลบ) ---
+        function setupNumericValidation() {
+            const inputs = document.querySelectorAll('.num-check');
+            inputs.forEach(input => {
+                // 1. ป้องกันการพิมพ์เครื่องหมายลบ/บวก และตัว 'e'
+                input.addEventListener('keydown', (e) => {
+                    if (['-', '+', 'e', 'E'].includes(e.key)) {
+                        e.preventDefault();
+                    }
+                });
+                // 2. ป้องกันการ Copy/Paste ค่าติดลบมาใส่
+                input.addEventListener('input', (e) => {
+                    if (input.value < 0) input.value = '';
+                });
+            });
+        }
+
+        function checkLoginStatus() {
+            const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const modal = document.getElementById('login-modal');
+            if(loggedIn) {
+                modal.classList.add('hidden');
+                document.body.classList.remove('modal-open');
+                document.getElementById('login-status-text').innerText = localStorage.getItem('userName');
+                document.getElementById('display-age').innerText = localStorage.getItem('userAge') + " ปี";
+                document.getElementById('display-height').innerText = localStorage.getItem('userHeight') + " ซม.";
+                document.getElementById('display-weight').innerText = localStorage.getItem('userWeight') + " กก.";
+                document.getElementById('display-meds').innerText = localStorage.getItem('userMeds');
+            } else {
+                modal.classList.remove('hidden');
+                document.body.classList.add('modal-open');
+            }
+        }
+
+        function handleLogin() {
+            const user = document.getElementById('username').value.trim();
+            const age = document.getElementById('user-age').value;
+            const height = document.getElementById('user-height').value;
+            const weight = document.getElementById('user-weight').value;
+            const meds = document.getElementById('user-meds').value.trim();
+
+            if (!user) { alert('กรุณาระบุชื่อเล่นครับ'); return; }
+            
+            // ตรวจสอบค่าตัวเลขซ้ำอีกครั้งในฝั่ง Logic
+            if (age <= 0 || height <= 0 || weight <= 0) {
+                alert('อายุ ส่วนสูง และน้ำหนัก ต้องเป็นตัวเลขที่มากกว่า 0 ครับ');
                 return;
             }
 
-            // ถ้ามีประวัติ ให้แสดงปุ่มถังขยะ
-            clearBtn.style.visibility = 'visible';
-
-            container.innerHTML = logs.slice().reverse().map((log, index) => {
-                const date = new Date(log.timestamp).toLocaleString('th-TH', { 
-                    day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' 
-                });
-
-                const answersHTML = log.answers ? log.answers.map(ans => `
-                    <div class="flex justify-between items-start gap-4 py-2 border-b border-gray-50 last:border-0">
-                        <span class="text-[11px] text-gray-500 leading-tight">${ans.q}</span>
-                        <span class="text-[11px] font-bold text-gray-700 text-right">${ans.a}</span>
-                    </div>
-                `).join('') : '';
-
-                return `
-                    <div class="bg-white rounded-3xl shadow-sm border-l-4 border-${log.color} overflow-hidden animate-fade" id="item-${index}">
-                        <div class="p-5 flex justify-between items-center cursor-pointer active:bg-gray-50 transition-colors" onclick="toggleDetail(${index})">
-                            <div>
-                                <h3 class="font-bold text-gray-800 text-lg">${log.result}</h3>
-                                <p class="text-[11px] text-gray-400 font-medium">เมื่อ: ${date} น.</p>
-                            </div>
-                            <i class="fa-solid fa-chevron-right text-gray-300"></i>
-                        </div>
-                        <div class="detail-content bg-slate-50/50 px-5">
-                            <div class="pb-6 pt-2">
-                                <p class="text-[10px] font-bold text-blue-400 mb-3 uppercase tracking-widest">รายละเอียดที่คุณตอบ</p>
-                                <div class="bg-white rounded-2xl p-4 border border-blue-50/50 shadow-sm">
-                                    ${answersHTML}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('userName', user);
+            localStorage.setItem('userAge', age);
+            localStorage.setItem('userHeight', height);
+            localStorage.setItem('userWeight', weight);
+            localStorage.setItem('userMeds', meds || 'ไม่มีข้อมูล');
+            checkLoginStatus();
         }
 
-        function toggleDetail(index) {
-            document.getElementById(`item-${index}`).classList.toggle('expanded');
-        }
-
-        function clearHistory() {
-            if (confirm('คุณต้องการลบประวัติการประเมินทั้งหมดใช่หรือไม่?')) {
-                localStorage.removeItem('asthma_history');
-                loadHistory(); 
+        function logout() {
+            if(confirm('ยืนยันออกจากระบบ?')) {
+                localStorage.clear();
+                window.location.reload();
             }
         }
 
-        // โหลดข้อมูลเมื่อเปิดหน้า
-        window.onload = loadHistory;
+        // --- ระบบตำแหน่ง & AQI (เหมือนเดิม) ---
+        function initLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    try {
+                        const res = await fetch(`https://api.waqi.info/feed/geo:${pos.coords.latitude};${pos.coords.longitude}/?token=demo`);
+                        const data = await res.json();
+                        if (data.status === "ok") updateUI(data.data.aqi);
+                    } catch (e) { console.error(e); }
+                }, () => { document.getElementById('aqi-status-text').innerText = "โปรดเปิด GPS"; });
+            }
+        }
+
+        function updateUI(aqi) {
+            document.getElementById('pm25-value').innerText = aqi;
+            const circle = document.getElementById('aqi-circle');
+            const pointer = document.getElementById('risk-pointer');
+            const text = document.getElementById('aqi-status-text');
+            
+            let color = "#ef4444", status = "อันตราย", pos = "95%";
+            if (aqi <= 25) { color = "#3b82f6"; status = "ดีมาก"; pos = "5%"; }
+            else if (aqi <= 50) { color = "#22c55e"; status = "ดี"; pos = "25%"; }
+            else if (aqi <= 100) { color = "#eab308"; status = "ปานกลาง"; pos = "50%"; }
+            else if (aqi <= 200) { color = "#f97316"; status = "เริ่มมีผล"; pos = "75%"; }
+
+            text.innerText = status;
+            text.style.color = color;
+            circle.style.stroke = color;
+            circle.style.strokeDashoffset = 534 - (Math.min(aqi, 200) / 200) * 534;
+            pointer.style.left = pos;
+        }
+
+        function confirmEmergencyCall() {
+            if (confirm("โทรสายด่วน 1669?")) window.location.href = "tel:1669";
+        }
+
+        window.onload = () => {
+            setupNumericValidation(); // ตั้งค่าดักเลขติดลบ
+            checkLoginStatus();
+            initLocation();
+        };
     </script>
 </body>
 </html>
